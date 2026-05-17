@@ -1,0 +1,278 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate">
+    <div class="page-header">
+        <h1 class="page-title">Admin Command Center</h1>
+        <p class="page-subtitle">Monitoring system health and attendance analytics</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="card stats-card">
+            <span class="label">Total Students</span>
+            <span class="value">{{ num_students }}</span>
+            <div style="font-size: 0.8rem; color: var(--accent-success); font-weight: 600;">↑ 12% from last month</div>
+        </div>
+        <div class="card stats-card">
+            <span class="label">Total Subjects</span>
+            <span class="value">{{ num_subjects }}</span>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Active curriculum</div>
+        </div>
+        <div class="card stats-card">
+            <span class="label">Classes Today</span>
+            <span class="value"
+                style="background: linear-gradient(to bottom, #fff, var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                {{ today_schedules|length }}
+            </span>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Scheduled sessions</div>
+        </div>
+        <div class="card stats-card">
+            <span class="label">System Status</span>
+            <span class="value"
+                style="background: linear-gradient(to bottom, #34d399, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Online</span>
+            <div style="font-size: 0.8rem; color: var(--accent-success);">A.I. Engine Active</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2.5rem; margin-bottom: 2.5rem;">
+        <!-- Student Logs -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 1.25rem;">Live Student Analytics</h2>
+                <div style="display: flex; gap: 0.75rem;">
+                    <a href="{{ url_for('export_student_attendance') }}" class="btn btn-secondary"
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: var(--accent-success);">
+                        <i data-lucide="download" style="width: 16px; height: 16px;"></i> Export ERP
+                    </a>
+                    <a href="{{ url_for('register_student') }}" class="btn btn-primary"
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> New Student
+                    </a>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Identity</th>
+                            <th>Target Subject</th>
+                            <th>Timestamp (IST)</th>
+                            <th>Verification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att, student, subject in recent_attendance %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ student.name }}</td>
+                            <td><span style="color: var(--primary-light);">{{ subject.subject_code }}</span></td>
+                            <td>{{ att.time.strftime('%I:%M %p') }}</td>
+                            <td><span class="badge status-present">Face Verified</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 3rem;">No
+                                telemetry data available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Today's Global Timetable -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 1.25rem;">Daily Schedule</h2>
+                <a href="{{ url_for('manage_subjects') }}" class="btn btn-secondary"
+                    style="padding: 0.4rem 0.82rem; font-size: 0.75rem;">Modify</a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                {% for sch, sub in today_schedules %}
+                <div
+                    style="display: flex; align-items: center; gap: 1.25rem; padding: 1.25rem; background: rgba(255,255,255,0.02); border-radius: 15px; border-left: 4px solid var(--primary-color);">
+                    <div
+                        style="text-align: center; min-width: 65px; border-right: 1px solid var(--glass-border); padding-right: 1rem;">
+                        <span
+                            style="display: block; font-size: 0.95rem; font-weight: 800; color: var(--primary-light);">{{
+                            sch.start_time.strftime('%I:%M') }}</span>
+                        <span
+                            style="display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">{{
+                            sch.start_time.strftime('%p') }}</span>
+                    </div>
+                    <div>
+                        <p style="font-weight: 700; font-size: 1rem; margin: 0; color: #fff;">{{ sub.subject_name }}</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">{{ sub.subject_code }}
+                            | {{ sch.classroom_name }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    <i data-lucide="calendar-x" style="width: 32px; height: 32px; opacity: 0.5;"></i>
+                    <p style="margin-top: 1rem;">Free day. No classes.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Logs -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="font-size: 1.25rem;">Faculty Attendance Registry</h2>
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="{{ url_for('export_teacher_attendance') }}" class="btn btn-secondary"
+                    style="padding: 0.5rem 1rem; font-size: 0.85rem; background: rgba(59, 130, 246, 0.05); color: var(--secondary-color); border-color: rgba(59, 130, 246, 0.1);">
+                    <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i> Excel Report
+                </a>
+                <a href="{{ url_for('register_faculty') }}" class="btn btn-secondary"
+                    style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Register Faculty
+                </a>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Faculty Member</th>
+                            <th>Designation</th>
+                            <th>Calendar Date</th>
+                            <th>Check-in Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att, user in recent_teacher_attendance %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ user.full_name }}</td>
+                            <td><span style="font-size: 0.8rem; color: var(--text-muted);">Professor / Associate</span>
+                            </td>
+                            <td>{{ att.date.strftime('%d %B, %Y') }}</td>
+                            <td style="color: var(--primary-light);">{{ att.time.strftime('%I:%M %p') }}</td>
+                            <td><span class="badge status-present">Present</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">No
+                                faculty
+                                check-ins recorded for this cycle.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Visualization Element -->
+            <div
+                style="padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid var(--glass-border);">
+                <h3 style="font-size: 1rem; margin-bottom: 1.5rem; text-align: center;">Daily Attendance Yield</h3>
+                <div style="position: relative; height: 250px;">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+                <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="width: 12px; height: 12px; border-radius: 3px; background: #8b5cf6;"></span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Present: {{ present_count }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span
+                            style="width: 12px; height: 12px; border-radius: 3px; background: rgba(244, 63, 94, 0.4);"></span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Absent: {{ absent_count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject Wise Performance Chart -->
+        <div
+            style="margin-top: 2rem; padding: 2.5rem; background: rgba(255,255,255,0.02); border-radius: 24px; border: 1px solid var(--glass-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 1.25rem;">Global Subject Telemetry</h2>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Live distribution of marked attendance across
+                    modules</div>
+            </div>
+            <div style="height: 300px;">
+                <canvas id="subjectChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+        const subjectCtx = document.getElementById('subjectChart').getContext('2d');
+
+        // Chart 1: Daily Yield (Doughnut)
+        new Chart(attendanceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present Today', 'Absent/Pending'],
+                datasets: [{
+                    data: [{{ present_count }}, {{ absent_count }}],
+            backgroundColor: ['#8b5cf6', 'rgba(244, 63, 94, 0.2)'],
+            borderColor: ['#a78bfa', 'rgba(244, 63, 94, 0.5)'],
+            borderWidth: 2,
+            hoverOffset: 15,
+            cutout: '75%'
+        }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                enabled: true,
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                padding: 12,
+                cornerRadius: 10
+            }
+        }
+    }
+        });
+
+    // Chart 2: Subject-wise Analytics (Bar)
+    new Chart(subjectCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ subject_labels| tojson }},
+        datasets: [{
+            label: 'Attendance Count',
+            data: {{ subject_counts| tojson }},
+        backgroundColor: 'rgba(139, 92, 246, 0.4)',
+        borderColor: '#8b5cf6',
+        borderWidth: 2,
+        borderRadius: 8,
+        hoverBackgroundColor: '#8b5cf6'
+                }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: 'rgba(255,255,255,0.5)' }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: 'rgba(255,255,255,0.7)', font: { weight: '600' } }
+            }
+        }
+    }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Attendance | AI-Powered</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h2 style="margin-bottom: 2rem; color: var(--primary-color);">SmartAttend.AI</h2>
+        <nav>
+            <a href="{{ url_for('dashboard') }}" class="nav-link active"><i data-lucide="layout-dashboard"
+                    style="margin-right: 10px;"></i> Dashboard</a>
+            {% if current_user.is_authenticated %}
+            {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('manage_students') }}" class="nav-link"><i data-lucide="users"
+                    style="margin-right: 10px;"></i> Manage Students</a>
+            <a href="{{ url_for('manage_faculty') }}" class="nav-link"><i data-lucide="user-check"
+                    style="margin-right: 10px;"></i> Manage Faculty</a>
+            <a href="{{ url_for('manage_subjects') }}" class="nav-link"><i data-lucide="book-open"
+                    style="margin-right: 10px;"></i> Manage Subjects</a>
+            {% elif current_user.role == 'faculty' %}
+            <a href="{{ url_for('faculty_attendance') }}" class="nav-link"><i data-lucide="user-check"
+                    style="margin-right: 10px;"></i> Mark My Attendance</a>
+            <a href="{{ url_for('dashboard') }}" class="nav-link"><i data-lucide="video"
+                    style="margin-right: 10px;"></i> Class Attendance</a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" class="nav-link" style="margin-top: 2rem; color: var(--accent-error);"><i
+                    data-lucide="log-out" style="margin-right: 10px;"></i> Logout</a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="nav-link"><i data-lucide="log-in" style="margin-right: 10px;"></i>
+                Login</a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer"
+            style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--glass-border);">
+            <div id="clock-time" style="font-size: 1.5rem; font-weight: 800; color: white;">00:00:00</div>
+            <div id="clock-date" style="font-size: 0.8rem; color: var(--text-muted);">Loading date...</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}"
+            style="padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; background: var(--glass-bg); color: white; border-left: 5px solid var(--primary-color);">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function updateClock() {
+            const now = new Date();
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            const dateOptions = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+
+            document.getElementById('clock-time').textContent = now.toLocaleTimeString('en-US', timeOptions);
+            document.getElementById('clock-date').textContent = now.toLocaleDateString('en-US', dateOptions);
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

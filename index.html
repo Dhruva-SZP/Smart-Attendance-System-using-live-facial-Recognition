@@ -1,0 +1,134 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate">
+    <div class="page-header">
+        <h1 class="page-title">Faculty Portal</h1>
+        <p class="page-subtitle">Academic Year 2025-26 | Welcome, Prof. {{ current_user.full_name }}</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="card stats-card"
+            style="border: 2px solid var(--primary-color); background: rgba(139, 92, 246, 0.05);">
+            <span class="label" style="color: var(--primary-light);">Attendance Status</span>
+            <span class="value" style="font-size: 1.8rem;">Daily Check-in</span>
+            <a href="{{ url_for('faculty_attendance') }}" class="btn btn-primary"
+                style="width: 100%; margin-top: 1rem;">
+                <i data-lucide="scan-eye" style="width: 18px; height: 18px;"></i> Start Face Verify
+            </a>
+        </div>
+        <div class="card stats-card">
+            <span class="label">My Subjects</span>
+            <span class="value">{{ subjects|length }}</span>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Assigned for semester</div>
+        </div>
+        <div class="card stats-card">
+            <span class="label">Periods Today</span>
+            <span class="value" style="color: var(--accent-info);">{{ today_schedules|length }}</span>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Active schedule</div>
+        </div>
+        <div class="card stats-card">
+            <span class="label">Up Next</span>
+            {% if today_schedules %}
+            <span class="value" style="font-size: 1.5rem; color: var(--primary-light);">{{
+                today_schedules[0].Subject.subject_code }}</span>
+            <div style="font-size: 0.8rem; color: var(--accent-warning);">Room: {{
+                today_schedules[0].SubjectSchedule.classroom_name }} @ {{
+                today_schedules[0].SubjectSchedule.start_time.strftime('%I:%M %p') }}</div>
+            {% else %}
+            <span class="value" style="font-size: 1.5rem; color: var(--text-muted);">No Classes</span>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Enjoy your free time</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2.5rem;">
+        <!-- Subjects List -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem;">
+                <div>
+                    <h2 style="font-size: 1.25rem;">Attendance Terminals</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Launch AI scanning for students</p>
+                </div>
+                <div class="badge status-present"
+                    style="background: rgba(16, 185, 129, 0.05); color: var(--accent-success); border: 1px solid rgba(16, 185, 129, 0.1);">
+                    System Ready
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.75rem;">
+                {% for subject in subjects %}
+                <div class="card"
+                    style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.4)); border: 1px solid var(--glass-border);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+                        <div>
+                            <h3 style="color: #fff; margin: 0; font-size: 1.15rem;">{{ subject.subject_name }}</h3>
+                            <span
+                                style="font-size: 0.8rem; color: var(--primary-light); font-weight: 600; text-transform: uppercase;">{{
+                                subject.subject_code }}</span>
+                        </div>
+                        <i data-lucide="book" style="width: 20px; height: 20px; color: var(--text-muted);"></i>
+                    </div>
+
+                    <div
+                        style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem;">
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px;">Class Strength</p>
+                        <div style="height: 6px; background: #2d3748; border-radius: 3px; overflow: hidden;">
+                            <div
+                                style="width: 75%; height: 100%; background: linear-gradient(to right, var(--primary-color), var(--secondary-color));">
+                            </div>
+                        </div>
+                        <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; text-align: right;">
+                            Average Attendance: 82%</p>
+                    </div>
+
+                    <button class="btn btn-primary" style="width: 100%;"
+                        onclick="window.location.href='/start_attendance/{{ subject.id }}'">
+                        <i data-lucide="camera" style="width: 18px; height: 18px;"></i> Launch Recognition
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Today's Timetable Sidebar -->
+        <div class="card">
+            <h2 style="font-size: 1.25rem;">Today's Schedule</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem;">Timeline for {{
+                get_ist_time().strftime('%A, %d %B') }}</p>
+
+            <div style="display: flex; flex-direction: column; gap: 1.5rem; position: relative;">
+                {% for sch, sub in today_schedules %}
+                <div style="display: flex; gap: 1.5rem; position: relative;">
+                    <div style="text-align: right; min-width: 60px;">
+                        <p style="font-size: 0.9rem; font-weight: 800; color: #fff;">{{ sch.start_time.strftime('%I:%M')
+                            }}</p>
+                        <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">{{
+                            sch.start_time.strftime('%p') }}</p>
+                    </div>
+
+                    <div
+                        style="flex-grow: 1; padding: 1.25rem; background: rgba(255,255,255,0.02); border-radius: 15px; border-left: 4px solid var(--secondary-color); position: relative;">
+                        <p style="font-weight: 700; font-size: 0.95rem; color: #fff; margin-bottom: 4px;">{{
+                            sub.subject_name }}</p>
+                        <div
+                            style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.75rem;">
+                            <span>{{ sub.subject_code }}</span>
+                            <span>•</span>
+                            <span style="color: var(--accent-success);">{{ sch.classroom_name }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    <i data-lucide="calendar-check"
+                        style="width: 38px; height: 38px; opacity: 0.3; margin-bottom: 1rem;"></i>
+                    <p>No more classes scheduled for today. Good work!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

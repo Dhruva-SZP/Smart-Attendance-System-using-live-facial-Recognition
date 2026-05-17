@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate">
+    <div style="margin-bottom: 2rem;">
+        <h1 id="status-title">Real-Time Attendance</h1>
+        <p style="color: var(--text-muted);">Subject: {{ subject.subject_name }} ({{ subject.subject_code }})</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+        <div class="card" style="padding: 0; overflow: hidden; position: relative;">
+            <div
+                style="position: absolute; top: 1rem; left: 1rem; background: rgba(0,0,0,0.5); padding: 0.5rem 1rem; border-radius: 0.5rem; z-index: 10;">
+                <span id="live-indicator" style="color: #ff4b2b;">● LIVE</span>
+            </div>
+            <img id="video-feed" src="{{ url_for('video_feed', subject_id=subject.id) }}"
+                style="width: 100%; height: auto; display: block;" alt="Camera Feed">
+        </div>
+
+        <div class="card">
+            <h3>Attendance Checklist</h3>
+            <p id="scan-status" style="color: var(--text-muted); margin-bottom: 1.5rem;">Scanning for enrolled
+                students...</p>
+
+            <div id="attendance-list" style="max-height: 400px; overflow-y: auto;">
+                <div id="ready-status"
+                    style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--glass-border);">
+                    <div>
+                        <p style="font-weight: 600;">System Ready</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Waiting for face...</p>
+                    </div>
+                    <i data-lucide="camera" style="color: var(--primary-color);"></i>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <button class="btn btn-primary" style="width: 100%;"
+                    onclick="window.location.href='{{ url_for('dashboard') }}'">End Session</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const markedNames = new Set();
+    const subjectId = "{{ subject.id }}";
+    const userRole = "{{ current_user.role }}";
+    const isRoomAcct = {{ 'true' if is_room_acct else 'false' }};
+
+    const checkInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/check_student_presence/${subjectId}`);
+            const data = await response.json();
+
+            // 1. Handle Faculty Data (Visible to all)
+            if (data.faculty) {
+                const facultyKey = 'FACULTY_' + data.faculty.name;
+                const list = document.getElementById('attendance-list');
+                let facultyItem = document.getElementById(facultyKey);
+
+                if (!facultyItem) {
+                    facultyItem = document.createElement('div');
+                    facultyItem.id = facultyKey;
+                    facultyItem.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-radius: 12px; margin-bottom: 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); animation: slideIn 0.3s ease-out;";
+                    list.prepend(facultyItem);
+                }
+
+                facultyItem.innerHTML = `
+                    <div>
+                        <p style="font-weight: 800; color: var(--accent-success); font-size: 1.1rem;">${data.faculty.name} (FACULTY)</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Instructor Verified at ${data.faculty.time}</p>
+                    </div>
+                    <i data-lucide="shield-check" style="color: var(--accent-success);"></i>
+                `;
+                lucide.createIcons();
+            }
+
+            // 2. Handle Student Data (Role-based Precision)
+            // Regular Students: Only care about 'present' (meaning THEY are verified)
+            // Monitors/Room Accounts: Care about 'recent' (to build a list of all marked)
+            const isMonitor = (userRole === 'admin' || userRole === 'faculty' || isRoomAcct);
+            const shouldProcess = isMonitor ? (data.status === 'recent') : (data.status === 'present');
+
+            if (shouldProcess && data.name) {
+                if (!markedNames.has(data.name)) {
+                    markedNames.add(data.name);
+
+                    const list = document.getElementById('attendance-list');
+                    const item = document.createElement('div');
+                    item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--glass-border); animation: slideIn 0.3s ease-out;";
+                    item.innerHTML = `
+                        <div>
+                            <p style="font-weight: 600; color: var(--accent-success);">${data.name} is Verified</p>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Attendance logged at ${new Date().toLocaleTimeString()}</p>
+                        </div>
+                        <i data-lucide="check-circle" style="color: var(--accent-success);"></i>
+                    `;
+                    list.prepend(item);
+                    lucide.createIcons();
+
+                    // Automatic redirect only for regular students when THEY ARE marked
+                    if (!isMonitor && data.status === 'present') {
+                        clearInterval(checkInterval);
+                        document.getElementById('status-title').innerHTML = "Attendance Marked!";
+                        document.getElementById('status-title').style.color = "var(--accent-success)";
+                        document.getElementById('live-indicator').innerHTML = "● DONE";
+                        document.getElementById('live-indicator').style.color = "var(--accent-success)";
+
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('dashboard') }}";
+                        }, 2500);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Polling error:", error);
+        }
+    }, 2000);
+</script>
+
+<style>
+    @keyframes slideIn {
+        from {
+            transform: translateX(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}

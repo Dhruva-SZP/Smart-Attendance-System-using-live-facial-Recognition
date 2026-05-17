@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1 class="page-title">Student Directory</h1>
+            <p class="page-subtitle">Centralized database for student identities and verified profiles</p>
+        </div>
+        <a href="{{ url_for('register_student') }}" class="btn btn-primary" style="margin-bottom: 2.5rem;">
+            <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Enroll New Student
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Identity Profile</th>
+                        <th>USN / ID</th>
+                        <th>Academic Info</th>
+                        <th>Parent Contact</th>
+                        <th>Internal Analytics</th>
+                        <th>System Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                {% if student.profile_image %}
+                                <div
+                                    style="width: 45px; height: 45px; border-radius: 12px; overflow: hidden; border: 2px solid var(--glass-border-bright);">
+                                    <img src="{{ url_for('static', filename='uploads/students/' + student.profile_image) }}"
+                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                {% else %}
+                                <div
+                                    style="width: 45px; height: 45px; border-radius: 12px; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; border: 1px dashed var(--glass-border);">
+                                    <i data-lucide="user" style="width: 20px; color: var(--text-muted);"></i>
+                                </div>
+                                {% endif %}
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-weight: 700; color: #fff;">{{ student.name }}</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Biometric Encoded</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span style="font-family: monospace; color: var(--primary-light); font-weight: 600;">{{
+                                student.student_id }}</span></td>
+                        <td>
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="font-size: 0.9rem; color: #fff;">{{ student.department }}</span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Year: {{ student.year
+                                    }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div
+                                style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.85rem;">
+                                <i data-lucide="phone" style="width: 12px;"></i> {{ student.parent_phone }}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div
+                                    style="width: 40px; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                                    <div style="width: 85%; height: 100%; background: var(--accent-success);"></div>
+                                </div>
+                                <span
+                                    style="font-size: 0.75rem; font-weight: 700; color: var(--accent-success);">Good</span>
+                            </div>
+                        </td>
+                        <td style="display: flex; gap: 8px;">
+                            <button onclick="checkAlerts({{ student.id }}, this)" title="Send Alert"
+                                class="btn btn-secondary"
+                                style="padding: 0.4rem 0.6rem; font-size: 0.75rem; border-color: rgba(244, 63, 94, 0.2); color: var(--accent-error);">
+                                <i data-lucide="bell-ring" style="width: 14px; height: 14px;"></i>
+                            </button>
+                            <a href="{{ url_for('send_pdf_report', student_id=student.id) }}" title="Send PDF Report"
+                                class="btn btn-secondary"
+                                style="padding: 0.4rem 0.6rem; font-size: 0.75rem; border-color: rgba(139, 92, 246, 0.3); color: var(--primary-light);">
+                                <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+                            </a>
+                            <a href="{{ url_for('delete_student', id=student.id) }}" title="Delete"
+                                class="btn btn-secondary"
+                                style="padding: 0.4rem 0.6rem; font-size: 0.75rem; border-color: rgba(244, 63, 94, 0.4); color: var(--accent-error);"
+                                onclick="return confirm('CRITICAL: Permanent deletion? This cannot be undone.')">
+                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 4rem;">
+                            <i data-lucide="users"
+                                style="width: 40px; height: 40px; opacity: 0.2; margin-bottom: 1rem;"></i>
+                            <p>Directory is empty. No student records found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function checkAlerts(studentId, btn) {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="animate-pulse">Analysing...</span>';
+        btn.disabled = true;
+
+        fetch(`/attendance_report/${studentId}`)
+            .then(response => response.json())
+            .then(data => {
+                let lowCount = data.filter(s => s.status === 'Low').length;
+                if (lowCount > 0) {
+                    alert(`🚨 Critical Alert: ${lowCount} subjects identified with low attendance (~75%). SMS transmission initiated to parent.`);
+                    btn.innerHTML = `<i data-lucide="check-check" style="width: 14px; height: 14px; margin-right: 4px;"></i> Alerted`;
+                    btn.style.background = 'rgba(16, 185, 129, 0.1)';
+                    btn.style.color = 'var(--accent-success)';
+                    btn.style.borderColor = 'var(--accent-success)';
+                } else {
+                    alert('Attendance threshold maintained for all modules. No intervention required.');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+                lucide.createIcons();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Neural scan failed. Check system logs.');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            });
+    }
+</script>
+{% endblock %}

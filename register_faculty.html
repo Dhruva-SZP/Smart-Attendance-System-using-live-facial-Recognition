@@ -1,0 +1,280 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .register-card {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(30px);
+        border: 1px solid var(--glass-border-bright);
+        border-radius: 28px;
+        padding: 3rem;
+        max-width: 800px;
+        margin: 2rem auto;
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+    }
+</style>
+
+<div class="animate">
+    <div class="register-card">
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+            <div
+                style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);">
+                <i data-lucide="user-plus" style="width: 28px; height: 28px; color: white;"></i>
+            </div>
+            <h1 style="font-size: 2.5rem; font-weight: 800; color: #fff; letter-spacing: -1px;">Join SmartAttend.AI</h1>
+            <p style="color: var(--text-muted);">Create your neural biometric profile for the enterprise registry.</p>
+        </div>
+
+        <form action="{{ url_for('register') }}" method="POST" enctype="multipart/form-data">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                <!-- Left Column: Core Account -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <h3
+                        style="color: var(--primary-light); font-size: 1.1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                        Account Identity</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">System Username / ID</label>
+                        <input type="text" name="username" placeholder="Enter USN or unique ID" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="full_name" placeholder="Enter full legal name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Access Password</label>
+                        <input type="password" name="password" placeholder="Minimum 8 characters" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Global Role</label>
+                        <select name="role" id="role-select" required onchange="toggleStudentFields()">
+                            <option value="student">Student Account</option>
+                            <option value="faculty">Faculty / Instructor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Right Column: Profile & Biometrics -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <h3
+                        style="color: var(--accent-success); font-size: 1.1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                        Biometric Profile</h3>
+
+                    <div id="student-only-fields" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">Department</label>
+                                <select name="department">
+                                    <option value="CSE">CSE</option>
+                                    <option value="ISE">ISE</option>
+                                    <option value="ECE">ECE</option>
+                                    <option value="AIML">AI&ML</option>
+                                    <option value="CSBS">CSBS</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Academic Year</label>
+                                <input type="number" name="year" min="1" max="4" placeholder="1-4">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Guardian Phone Number</label>
+                            <input type="tel" name="phone" placeholder="+91 XXXX XXX XXX">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label class="form-label" style="margin-bottom: 0;">Biometric Verification (Face)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" id="btn-upload" onclick="setMode('upload')" class="btn"
+                                    style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--primary-color); color: white; border-radius: 8px;">Upload</button>
+                                <button type="button" id="btn-webcam" onclick="setMode('webcam')" class="btn"
+                                    style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 8px;">Webcam</button>
+                            </div>
+                        </div>
+
+                        <div id="drop-zone"
+                            style="border: 2px dashed var(--glass-border); padding: 1.5rem; border-radius: 16px; text-align: center; cursor: pointer; transition: 0.3s; background: rgba(255,255,255,0.02); min-height: 200px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+
+                            <!-- Mode: Upload -->
+                            <div id="upload-ui" style="display: flex; flex-direction: column; align-items: center;"
+                                onclick="document.getElementById('face_image').click()">
+                                <div id="preview-container"
+                                    style="display: none; flex-direction: column; align-items: center;">
+                                    <img id="image-preview" src="#"
+                                        style="max-width: 180px; border-radius: 12px; margin-bottom: 0.5rem; border: 2px solid var(--accent-success);">
+                                    <p style="color: var(--accent-success); font-size: 0.8rem; font-weight: 700;">
+                                        ENCODING READY</p>
+                                </div>
+                                <div id="upload-prompt">
+                                    <i data-lucide="upload-cloud"
+                                        style="width: 32px; height: 32px; color: var(--primary-color); margin-bottom: 0.5rem;"></i>
+                                    <p style="font-size: 0.85rem; color: var(--text-muted);">Click or Drag Portrait Here
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Mode: Webcam -->
+                            <div id="webcam-ui"
+                                style="display: none; flex-direction: column; align-items: center; width: 100%;">
+                                <video id="webcam-video" autoplay playsinline
+                                    style="width: 100%; max-width: 250px; border-radius: 12px; background: #000; transform: scaleX(-1);"></video>
+                                <canvas id="webcam-canvas" style="display: none;"></canvas>
+                                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                                    <button type="button" id="snap-btn" onclick="takeSnapshot()" class="btn btn-primary"
+                                        style="padding: 0.5rem 1.5rem; border-radius: 10px; font-size: 0.8rem;">
+                                        <i data-lucide="camera"
+                                            style="width: 16px; height: 16px; margin-right: 5px;"></i> Capture
+                                    </button>
+                                    <button type="button" id="retake-btn" onclick="initWebcam()" class="btn"
+                                        style="display: none; padding: 0.5rem 1.5rem; border-radius: 10px; font-size: 0.8rem; background: rgba(255,255,255,0.1); color: white;">
+                                        Retake
+                                    </button>
+                                </div>
+                            </div>
+
+                            <input type="file" id="face_image" name="face_image" accept="image/*" required
+                                style="display: none;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="final-submit"
+                style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border-radius: 20px; font-weight: 700;">
+                <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i> Initialize Profile & Register
+            </button>
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <a href="{{ url_for('dashboard') }}"
+                    style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+                    <i data-lucide="arrow-left" style="width: 14px; height: 14px; vertical-align: middle;"></i> Back to
+                    Dashboard</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleStudentFields() {
+        const role = document.getElementById('role-select').value;
+        const studentFields = document.getElementById('student-only-fields');
+        if (role === 'faculty') {
+            studentFields.style.opacity = '0.3';
+            studentFields.style.pointerEvents = 'none';
+        } else {
+            studentFields.style.opacity = '1';
+            studentFields.style.pointerEvents = 'auto';
+        }
+    }
+
+    const faceInput = document.getElementById('face_image');
+    const preview = document.getElementById('image-preview');
+    const previewContainer = document.getElementById('preview-container');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const dropZone = document.getElementById('drop-zone');
+
+    // Webcam elements
+    const video = document.getElementById('webcam-video');
+    const canvas = document.getElementById('webcam-canvas');
+    const uploadUi = document.getElementById('upload-ui');
+    const webcamUi = document.getElementById('webcam-ui');
+    const btnUpload = document.getElementById('btn-upload');
+    const btnWebcam = document.getElementById('btn-webcam');
+    const snapBtn = document.getElementById('snap-btn');
+    const retakeBtn = document.getElementById('retake-btn');
+
+    let stream = null;
+
+    function setMode(mode) {
+        if (mode === 'webcam') {
+            uploadUi.style.display = 'none';
+            webcamUi.style.display = 'flex';
+            btnWebcam.style.background = 'var(--primary-color)';
+            btnWebcam.style.color = 'white';
+            btnUpload.style.background = 'rgba(255,255,255,0.1)';
+            btnUpload.style.color = 'var(--text-muted)';
+            initWebcam();
+        } else {
+            stopWebcam();
+            uploadUi.style.display = 'flex';
+            webcamUi.style.display = 'none';
+            btnUpload.style.background = 'var(--primary-color)';
+            btnUpload.style.color = 'white';
+            btnWebcam.style.background = 'rgba(255,255,255,0.1)';
+            btnWebcam.style.color = 'var(--text-muted)';
+        }
+    }
+
+    async function initWebcam() {
+        try {
+            snapBtn.style.display = 'block';
+            retakeBtn.style.display = 'none';
+            video.style.display = 'block';
+            previewContainer.style.display = 'none';
+
+            stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+            video.srcObject = stream;
+        } catch (err) {
+            alert("Could not access webcam: " + err);
+            setMode('upload');
+        }
+    }
+
+    function stopWebcam() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    function takeSnapshot() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+
+        // Mirror the snapshot to match video
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob(blob => {
+            const file = new File([blob], "snapshot.jpg", { type: "image/jpeg" });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            faceInput.files = dataTransfer.files;
+
+            // Show preview
+            preview.src = URL.createObjectURL(blob);
+            previewContainer.style.display = 'flex';
+            video.style.display = 'none';
+            snapBtn.style.display = 'none';
+            retakeBtn.style.display = 'block';
+
+            dropZone.style.borderStyle = 'solid';
+            dropZone.style.borderColor = 'var(--accent-success)';
+
+            // Sync with upload UI preview too
+            uploadPrompt.style.display = 'none';
+
+            stopWebcam();
+        }, 'image/jpeg', 0.95);
+    }
+
+    faceInput.onchange = evt => {
+        const [file] = faceInput.files;
+        if (file) {
+            preview.src = URL.createObjectURL(file);
+            previewContainer.style.display = 'flex';
+            uploadPrompt.style.display = 'none';
+            dropZone.style.borderStyle = 'solid';
+            dropZone.style.borderColor = 'var(--accent-success)';
+            dropZone.style.background = 'rgba(16, 185, 129, 0.05)';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate">
+    <div style="margin-bottom: 2rem;">
+        <h1>Register New Student</h1>
+        <p style="color: var(--text-muted);">Enroll student details and capture face encoding.</p>
+    </div>
+
+    <div class="card" style="max-width: 600px;">
+        <form action="{{ url_for('register_student') }}" method="POST" enctype="multipart/form-data">
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">USN (Student ID)</label>
+                <input type="text" name="student_id" required
+                    style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white;">
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Full Name</label>
+                <input type="text" name="name" required
+                    style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Department</label>
+                    <select name="department"
+                        style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white;">
+                        <option value="CSE">CSE</option>
+                        <option value="ISE">ISE</option>
+                        <option value="ECE">ECE</option>
+                        <option value="ME">ME</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Year</label>
+                    <input type="number" name="year" required min="1" max="4"
+                        style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Parent Phone
+                    Number</label>
+                <input type="tel" name="phone" required placeholder="+91..."
+                    style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white;">
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label style="color: var(--text-muted); margin-bottom: 0;">Profile Image (for Face Encoding)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" id="btn-upload" onclick="setMode('upload')" class="btn"
+                            style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: var(--primary-color); color: white; border-radius: 8px;">Upload</button>
+                        <button type="button" id="btn-webcam" onclick="setMode('webcam')" class="btn"
+                            style="padding: 0.3rem 0.8rem; font-size: 0.75rem; background: rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 8px;">Webcam</button>
+                    </div>
+                </div>
+
+                <div id="drop-zone"
+                    style="border: 2px dashed var(--glass-border); padding: 2rem; border-radius: 0.5rem; text-align: center; cursor: pointer; transition: 0.3s; background: rgba(255,255,255,0.02); position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center;"
+                    onclick="if(currentMode==='upload') document.getElementById('face_image').click()">
+
+                    <!-- Mode: Upload -->
+                    <div id="upload-ui" style="display: flex; flex-direction: column; align-items: center;">
+                        <div id="preview-container" style="display: none; flex-direction: column; align-items: center;">
+                            <img id="image-preview" src="#"
+                                style="max-width: 200px; max-height: 200px; border-radius: 0.5rem; margin-bottom: 1rem; border: 2px solid var(--accent-success);">
+                            <p style="color: var(--accent-success);">Biometric Ready!</p>
+                        </div>
+                        <div id="upload-prompt">
+                            <i data-lucide="camera"
+                                style="width: 40px; height: 40px; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                            <p>Click to upload or drag and drop</p>
+                        </div>
+                    </div>
+
+                    <!-- Mode: Webcam -->
+                    <div id="webcam-ui"
+                        style="display: none; flex-direction: column; align-items: center; width: 100%;">
+                        <video id="webcam-video" autoplay playsinline
+                            style="width: 100%; max-width: 300px; border-radius: 12px; background: #000; transform: scaleX(-1);"></video>
+                        <canvas id="webcam-canvas" style="display: none;"></canvas>
+                        <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                            <button type="button" id="snap-btn" onclick="takeSnapshot()" class="btn btn-primary"
+                                style="padding: 0.5rem 1.5rem; border-radius: 10px; font-size: 0.8rem;">Capture
+                                Portrait</button>
+                            <button type="button" id="retake-btn" onclick="initWebcam()" class="btn"
+                                style="display: none; padding: 0.5rem 1.5rem; border-radius: 10px; font-size: 0.8rem; background: rgba(255,255,255,0.1); color: white;">Retake</button>
+                        </div>
+                    </div>
+
+                    <input type="file" id="face_image" name="face_image" accept="image/*" required
+                        style="display: none;">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;" id="submit-btn">Register Student</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const faceInput = document.getElementById('face_image');
+    const preview = document.getElementById('image-preview');
+    const previewContainer = document.getElementById('preview-container');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const dropZone = document.getElementById('drop-zone');
+
+    // Webcam elements
+    const video = document.getElementById('webcam-video');
+    const canvas = document.getElementById('webcam-canvas');
+    const uploadUi = document.getElementById('upload-ui');
+    const webcamUi = document.getElementById('webcam-ui');
+    const btnUpload = document.getElementById('btn-upload');
+    const btnWebcam = document.getElementById('btn-webcam');
+    const snapBtn = document.getElementById('snap-btn');
+    const retakeBtn = document.getElementById('retake-btn');
+
+    let stream = null;
+    let currentMode = 'upload';
+
+    function setMode(mode) {
+        currentMode = mode;
+        if (mode === 'webcam') {
+            uploadUi.style.display = 'none';
+            webcamUi.style.display = 'flex';
+            btnWebcam.style.background = 'var(--primary-color)';
+            btnWebcam.style.color = 'white';
+            btnUpload.style.background = 'rgba(255,255,255,0.1)';
+            btnUpload.style.color = 'var(--text-muted)';
+            initWebcam();
+        } else {
+            stopWebcam();
+            uploadUi.style.display = 'flex';
+            webcamUi.style.display = 'none';
+            btnUpload.style.background = 'var(--primary-color)';
+            btnUpload.style.color = 'white';
+            btnWebcam.style.background = 'rgba(255,255,255,0.1)';
+            btnWebcam.style.color = 'var(--text-muted)';
+        }
+    }
+
+    async function initWebcam() {
+        try {
+            snapBtn.style.display = 'block';
+            retakeBtn.style.display = 'none';
+            video.style.display = 'block';
+            previewContainer.style.display = 'none';
+
+            stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+            video.srcObject = stream;
+        } catch (err) {
+            alert("Could not access webcam: " + err);
+            setMode('upload');
+        }
+    }
+
+    function stopWebcam() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    function takeSnapshot() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob(blob => {
+            const file = new File([blob], "snapshot.jpg", { type: "image/jpeg" });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            faceInput.files = dataTransfer.files;
+
+            preview.src = URL.createObjectURL(blob);
+            previewContainer.style.display = 'flex';
+            video.style.display = 'none';
+            snapBtn.style.display = 'none';
+            retakeBtn.style.display = 'block';
+
+            dropZone.style.borderStyle = 'solid';
+            dropZone.style.borderColor = 'var(--accent-success)';
+            uploadPrompt.style.display = 'none';
+
+            stopWebcam();
+        }, 'image/jpeg', 0.95);
+    }
+
+    faceInput.onchange = evt => {
+        const [file] = faceInput.files;
+        if (file) {
+            preview.src = URL.createObjectURL(file);
+            previewContainer.style.display = 'flex';
+            uploadPrompt.style.display = 'none';
+            dropZone.style.borderStyle = 'solid';
+            dropZone.style.borderColor = 'var(--accent-success)';
+        }
+    }
+</script>
+{% endblock %}

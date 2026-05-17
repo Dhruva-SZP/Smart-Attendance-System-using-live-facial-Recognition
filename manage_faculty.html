@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gateway | SmartAttend.AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 40%);
+            overflow: hidden;
+        }
+
+        .login-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            padding: 2.5rem;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .login-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border-bright);
+            border-radius: 28px;
+            padding: 3rem;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+        }
+
+        .logo-box {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 15px 30px rgba(139, 92, 246, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 15px 30px rgba(139, 92, 246, 0.4);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 15px 30px rgba(139, 92, 246, 0.4);
+            }
+        }
+
+        .floating-bg {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: var(--primary-color);
+            filter: blur(100px);
+            opacity: 0.1;
+            z-index: 0;
+            border-radius: 50%;
+        }
+
+        input {
+            margin-top: 0.5rem;
+        }
+
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .welcome-text h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .welcome-text p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="floating-bg" style="top: -100px; left: -100px;"></div>
+    <div class="floating-bg" style="bottom: -100px; right: -100px; background: var(--secondary-color);"></div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-box">
+                <i data-lucide="shield-check" style="width: 35px; height: 35px; color: white;"></i>
+            </div>
+
+            <div class="welcome-text">
+                <h1>SmartAttend.AI</h1>
+                <p>Enterprise Attendance Gateway</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div
+                style="padding: 12px; background: rgba(244, 63, 94, 0.1); color: #f43f5e; border-radius: 12px; margin-bottom: 25px; text-align: center; font-size: 0.9rem; border: 1px solid rgba(244, 63, 94, 0.2); font-weight: 600;">
+                <i data-lucide="alert-circle"
+                    style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"></i> {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="form-group">
+                    <label class="form-label">System Identity (Username)</label>
+                    <div style="position: relative;">
+                        <i data-lucide="user"
+                            style="position: absolute; left: 15px; top: 18px; width: 18px; color: var(--text-muted);"></i>
+                        <input type="text" name="username" placeholder="Enter USN or Faculty ID" required
+                            style="padding-left: 3rem;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 2.5rem;">
+                    <label class="form-label">Security Access (Password)</label>
+                    <div style="position: relative;">
+                        <i data-lucide="lock"
+                            style="position: absolute; left: 15px; top: 18px; width: 18px; color: var(--text-muted);"></i>
+                        <input type="password" name="password" placeholder="••••••••" required
+                            style="padding-left: 3rem;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary"
+                    style="width: 100%; padding: 1.1rem; font-size: 1rem; border-radius: 16px; letter-spacing: 0.5px; margin-bottom: 1.5rem;">
+                    <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Authorize Access
+                </button>
+
+                <!-- Registration link removed: now admin-only -->
+            </form>
+
+            <div
+                style="text-align: center; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+                <span style="color: var(--text-muted); font-size: 0.8rem; font-weight: 500;">
+                    <i data-lucide="cpu"
+                        style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></i> Powered by
+                    Edge-AI Neural Engine
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

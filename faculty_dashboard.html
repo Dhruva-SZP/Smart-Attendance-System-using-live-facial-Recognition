@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate">
+    <div style="margin-bottom: 2rem;">
+        <h1 id="status-title">Faculty Daily Presence</h1>
+        <p style="color: var(--text-muted); ">Please look at the camera to mark your attendance for today.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+        <!-- Video Feed Container -->
+        <div class="card" style="padding: 0; overflow: hidden; position: relative;">
+            <div
+                style="position: absolute; top: 1rem; left: 1rem; z-index: 10; background: rgba(0,0,0,0.5); padding: 0.5rem 1rem; border-radius: 2rem; display: flex; align-items: center; gap: 0.5rem;">
+                <div id="live-dot"
+                    style="width: 8px; height: 8px; background: #ff4b2b; border-radius: 50%; box-shadow: 0 0 10px #ff4b2b;">
+                </div>
+                <span id="live-text" style="font-size: 0.8rem; font-weight: 600;">LIVE SCANNING</span>
+            </div>
+            <img src="{{ url_for('teacher_video_feed') }}"
+                style="width: 100%; height: auto; display: block; background: #1a1a1a;">
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="card">
+            <h3 style="margin-bottom: 1.5rem;">Status Console</h3>
+
+            <div id="status-box" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div
+                    style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem;">
+                    <i data-lucide="shield-check" style="color: var(--primary-color);"></i>
+                    <div>
+                        <p style="font-weight: 600; font-size: 0.9rem;">Identity Verifier</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Waiting for facial match...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 2rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.5rem; border: 1px dashed var(--primary-color);">
+                <p style="font-size: 0.8rem; color: var(--primary-color); text-align: center;">
+                    <b>Tip:</b> Blink naturally to confirm liveness.
+                </p>
+            </div>
+
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary"
+                style="width: 100%; margin-top: 2rem; background: transparent; border: 1px solid var(--glass-border);">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log("Teacher Attendance Tracker Started...");
+
+    const checkStatus = setInterval(async () => {
+        try {
+            const response = await fetch('/api/check_teacher_attendance');
+            const data = await response.json();
+
+            console.log("Polling Status:", data.status);
+
+            if (data.status === 'present') {
+                clearInterval(checkStatus);
+                console.log("MATCH CONFIRMED! Redirecting...");
+
+                // Visual feedback
+                document.getElementById('status-title').innerHTML = "Identity Confirmed!";
+                document.getElementById('status-title').style.color = "var(--accent-success)";
+                document.getElementById('live-dot').style.background = "var(--accent-success)";
+                document.getElementById('live-text').innerHTML = "VERIFIED";
+
+                const statusBox = document.getElementById('status-box');
+                statusBox.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 0.5rem; border: 1px solid var(--accent-success); animation: pulse 1s infinite;">
+                        <i data-lucide="check-circle" style="color: var(--accent-success);"></i>
+                        <div>
+                            <p style="font-weight: 600; font-size: 0.9rem; color: var(--accent-success);">${data.name} is Verified</p>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Session logged successfully.</p>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('dashboard') }}";
+                }, 2000);
+            }
+        } catch (e) {
+            console.error("Polling failed:", e);
+        }
+    }, 2000);
+</script>
+
+<style>
+    @keyframes pulse {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.7;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
