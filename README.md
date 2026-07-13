@@ -1,5 +1,5 @@
 # 📚 SMART ATTENDANCE SYSTEM - DOCUMENTATION INDEX
-
+ 
 ## 🎯 Start Here
 
 ### For Quick Setup (5 minutes):
