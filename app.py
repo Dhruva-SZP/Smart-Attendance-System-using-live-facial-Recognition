@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
 import cv2
-import json
+import json                                         
 import os
 from datetime import datetime, timedelta
 from utils.face_utils import recognize_face_at_location, get_face_encodings, verify_liveness, detector, predictor
